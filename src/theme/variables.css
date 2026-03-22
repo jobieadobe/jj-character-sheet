@@ -1,2 +1,51 @@
-/* For information on how to create your own theme, please refer to:
-http://ionicframework.com/docs/theming/ */
+:root {
+  --ion-color-primary: #e94560;
+  --ion-color-primary-rgb: 233, 69, 96;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #cd3d54;
+  --ion-color-primary-tint: #eb5870;
+
+  --ion-color-secondary: #0f3460;
+  --ion-color-secondary-rgb: 15, 52, 96;
+  --ion-color-secondary-contrast: #ffffff;
+  --ion-color-secondary-contrast-rgb: 255, 255, 255;
+  --ion-color-secondary-shade: #0d2e54;
+  --ion-color-secondary-tint: #274870;
+
+  --ion-color-tertiary: #00bcd4;
+  --ion-color-tertiary-rgb: 0, 188, 212;
+  --ion-color-tertiary-contrast: #000000;
+  --ion-color-tertiary-contrast-rgb: 0, 0, 0;
+  --ion-color-tertiary-shade: #00a5bb;
+  --ion-color-tertiary-tint: #1ac3d8;
+
+  --ion-background-color: #1a1a2e;
+  --ion-background-color-rgb: 26, 26, 46;
+  --ion-text-color: #e0e0e0;
+  --ion-text-color-rgb: 224, 224, 224;
+
+  --ion-card-background: #16213e;
+  --ion-item-background: #16213e;
+  --ion-toolbar-background: #1a1a2e;
+
+  --ion-color-step-50: #1e1e34;
+  --ion-color-step-100: #22223a;
+  --ion-color-step-150: #262640;
+  --ion-color-step-200: #2a2a46;
+  --ion-color-step-250: #2e2e4c;
+  --ion-color-step-300: #323252;
+  --ion-color-step-350: #363658;
+  --ion-color-step-400: #3a3a5e;
+  --ion-color-step-450: #3e3e64;
+  --ion-color-step-500: #42426a;
+  --ion-color-step-550: #565680;
+  --ion-color-step-600: #6a6a96;
+  --ion-color-step-650: #7e7eac;
+  --ion-color-step-700: #9292c2;
+  --ion-color-step-750: #a6a6d8;
+  --ion-color-step-800: #babaee;
+  --ion-color-step-850: #cecef4;
+  --ion-color-step-900: #e2e2fa;
+  --ion-color-step-950: #f6f6ff;
+}
