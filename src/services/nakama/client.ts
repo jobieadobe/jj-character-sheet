@@ -1,9 +1,9 @@
 import { Client, Session, Socket } from '@heroiclabs/nakama-js';
 
-const NAKAMA_HOST = 'localhost';
-const NAKAMA_PORT = '7350';
-const NAKAMA_USE_SSL = false;
-const NAKAMA_KEY = 'defaultkey';
+const NAKAMA_HOST = import.meta.env.VITE_NAKAMA_HOST || 'localhost';
+const NAKAMA_PORT = import.meta.env.VITE_NAKAMA_PORT || '7350';
+const NAKAMA_USE_SSL = import.meta.env.VITE_NAKAMA_SSL === 'true';
+const NAKAMA_KEY = import.meta.env.VITE_NAKAMA_KEY || 'defaultkey';
 
 let clientInstance: Client | null = null;
 let sessionInstance: Session | null = null;
