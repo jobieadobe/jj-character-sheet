@@ -27,5 +27,6 @@ export function sourceLabel(source: RollSource): string {
     case 'weapon': return 'Weapon';
     case 'armor': return 'Armor';
     case 'shield': return 'Shield';
+    case 'movement': return 'Movement';
   }
 }

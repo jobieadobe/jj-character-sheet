@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { IonButton, IonChip, IonLabel, IonIcon, IonBadge } from '@ionic/react';
 import { diceOutline, closeCircle } from 'ionicons/icons';
 import { Die, QueuedGroup, RollSource, RollComponent, DieResult } from '../../models/dice';
@@ -8,12 +8,17 @@ import { mapResultsToComponents } from '../../utils/dice-notation';
 import { formatRollResult } from '../../utils/format-roll';
 import { rollDice, rollDiceFallback, isDiceReady, clearDice } from '../../services/dice/dice-engine';
 import { STAT_COLORS, FORCE_COLOR, DETERMINATION_COLOR, D20_COLOR } from '../../utils/constants';
+import { useTheme } from '../../state/ThemeContext';
 
 interface RollBuilderProps {
   character: Character;
   onRollComplete: (components: RollComponent[], total: number, formatted: string) => void;
   onRollStart?: () => void;
   username: string;
+}
+
+export interface RollBuilderHandle {
+  addStat: (name: StatName) => void;
 }
 
 interface QueueItem {
@@ -23,10 +28,25 @@ interface QueueItem {
   color: string;
 }
 
-const RollBuilder: React.FC<RollBuilderProps> = ({ character, onRollComplete, onRollStart, username }) => {
+const RollBuilder = forwardRef<RollBuilderHandle, RollBuilderProps>(({ character, onRollComplete, onRollStart, username }, ref) => {
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [rolling, setRolling] = useState(false);
   const [showAttackType, setShowAttackType] = useState(false);
+  const { theme } = useTheme();
+
+  useImperativeHandle(ref, () => ({
+    addStat: (name: StatName) => {
+      const dice = character.stats[name];
+      if (dice.length === 0) return;
+      const diceLabel = dice.map((d) => `d${d.sides}`).join('+');
+      setQueue((prev) => [...prev, {
+        source: { type: 'stat', name } as RollSource,
+        dice: [...dice],
+        label: `${name} (${diceLabel})`,
+        color: STAT_COLORS[name],
+      }]);
+    },
+  }), [character]);
 
   const addToQueue = useCallback((item: QueueItem) => {
     setQueue((prev) => [...prev, item]);
@@ -40,12 +60,14 @@ const RollBuilder: React.FC<RollBuilderProps> = ({ character, onRollComplete, on
     setQueue([]);
   }, []);
 
-  const addD20 = () => {
+  const POLYHEDRAL_DICE = [4, 6, 8, 10, 12, 20];
+
+  const addDie = (sides: number) => {
     addToQueue({
-      source: { type: 'd20' },
-      dice: [{ sides: 20 }],
-      label: 'd20',
-      color: D20_COLOR,
+      source: sides === 20 ? { type: 'd20' } : { type: 'stat', name: `d${sides}` },
+      dice: [{ sides: sides as Die['sides'] }],
+      label: `d${sides}`,
+      color: sides === 20 ? D20_COLOR : '#555',
     });
   };
 
@@ -122,6 +144,18 @@ const RollBuilder: React.FC<RollBuilderProps> = ({ character, onRollComplete, on
     });
   };
 
+  const addMovement = () => {
+    if (character.movementSpeed.length === 0) return;
+    const dice = character.movementSpeed;
+    const diceLabel = dice.map((d) => `d${d.sides}`).join('+');
+    addToQueue({
+      source: { type: 'movement' },
+      dice: [...dice],
+      label: `Movement (${diceLabel})`,
+      color: '#1abc9c',
+    });
+  };
+
   const handleRoll = async () => {
     if (queue.length === 0 || rolling) return;
     setRolling(true);
@@ -134,14 +168,14 @@ const RollBuilder: React.FC<RollBuilderProps> = ({ character, onRollComplete, on
       if (isDiceReady()) {
         clearDice();
         onRollStart?.();
-        results = await rollDice(flatDice);
+        results = await rollDice(flatDice, theme.diceColor);
       } else {
         results = rollDiceFallback(flatDice);
       }
 
       const components = mapResultsToComponents(groups, results);
       const total = components.reduce((sum, c) => sum + c.subtotal, 0);
-      const formatted = formatRollResult(username, character.name, components, total);
+      const formatted = formatRollResult(username, character.name, components, total, character.race, character.className);
 
       onRollComplete(components, total, formatted);
       clearQueue();
@@ -153,7 +187,7 @@ const RollBuilder: React.FC<RollBuilderProps> = ({ character, onRollComplete, on
       const results = rollDiceFallback(flatDice);
       const components = mapResultsToComponents(groups, results);
       const total = components.reduce((sum, c) => sum + c.subtotal, 0);
-      const formatted = formatRollResult(username, character.name, components, total);
+      const formatted = formatRollResult(username, character.name, components, total, character.race, character.className);
       onRollComplete(components, total, formatted);
       clearQueue();
     } finally {
@@ -262,6 +296,13 @@ const RollBuilder: React.FC<RollBuilderProps> = ({ character, onRollComplete, on
         >
           Defense
         </IonButton>
+        <IonButton
+          size="small"
+          onClick={addMovement}
+          style={{ '--background': '#1abc9c', flex: 1 } as any}
+        >
+          Move
+        </IonButton>
       </div>
 
       {/* Attack type selection */}
@@ -295,15 +336,26 @@ const RollBuilder: React.FC<RollBuilderProps> = ({ character, onRollComplete, on
       )}
 
       {/* Dice selection buttons */}
+      {/* Polyhedral dice */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
-        <IonChip
-          onClick={addD20}
-          style={{ '--background': '#333', '--color': '#fff', cursor: 'pointer' } as any}
-        >
-          <IonIcon icon={diceOutline} />
-          <IonLabel>d20</IonLabel>
-        </IonChip>
+        {POLYHEDRAL_DICE.map((sides) => (
+          <IonChip
+            key={sides}
+            onClick={() => addDie(sides)}
+            style={{
+              '--background': sides === 20 ? D20_COLOR : '#444',
+              '--color': '#fff',
+              cursor: 'pointer',
+            } as any}
+          >
+            <IonIcon icon={diceOutline} />
+            <IonLabel>d{sides}</IonLabel>
+          </IonChip>
+        ))}
+      </div>
 
+      {/* Stat dice */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
         {STAT_NAMES.map((stat) => (
           <IonChip
             key={stat}
@@ -403,6 +455,6 @@ const RollBuilder: React.FC<RollBuilderProps> = ({ character, onRollComplete, on
       </div>
     </div>
   );
-};
+});
 
 export default RollBuilder;

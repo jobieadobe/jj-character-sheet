@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from 'react';
 import { initDiceEngine } from '../../services/dice/dice-engine';
-
 const STYLE_ID = 'dice-canvas-styles';
 
 function injectStyles() {
@@ -23,6 +22,12 @@ function injectStyles() {
       width: 100% !important;
       height: 100% !important;
     }
+
+    /* Cosmic glow effect — bloom + saturation on the 3D dice */
+    .dice-canvas-cosmic canvas {
+      filter: contrast(1.15) saturate(1.5) brightness(1.1);
+    }
+
   `;
   document.head.appendChild(style);
 }
@@ -49,6 +54,7 @@ const DiceCanvas: React.FC<{ visible: boolean }> = ({ visible }) => {
   return (
     <div
       id="dice-canvas"
+      className={visible ? 'dice-canvas-cosmic' : ''}
       style={{
         position: 'fixed',
         top: 0,

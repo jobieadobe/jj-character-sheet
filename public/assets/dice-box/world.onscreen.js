@@ -7823,10 +7823,23 @@ const os = {
   enableShadows: !0
 };
 function zt(f = os) {
-  const { enableShadows: e, shadowTransparency: t, intensity: i, scene: r } = f, s = new _e("DirectionalLight", new M(-0.3, -1, 0.4), r);
-  s.position = new M(-50, 65, -50), s.intensity = 0.65 * i;
-  const n = new ct("HemisphericLight", new M(1, 1, 0), r);
-  return n.intensity = 0.4 * i, e && (s.shadowMinZ = 1, s.shadowMaxZ = 70, s.shadowGenerator = new A(2048, s), s.shadowGenerator.useCloseExponentialShadowMap = !0, s.shadowGenerator.darkness = t), { directional: s, hemispheric: n };
+  const { enableShadows: e, shadowTransparency: t, intensity: i, scene: r } = f;
+  var saved = typeof self !== 'undefined' && self.__jjLightConfig;
+  var cfg = saved || { top: { dx: -0.3, dy: -0.9, dz: 0.4, px: -50, py: 65, pz: -50, int: 0.2 }, hemi: { dx: 0, dy: 0, dz: 1, int: 0.3 }, right: { dx: 1, dy: 0, dz: 0, px: 100, py: 5, pz: 0, int: 15 }, left: { dx: -1, dy: 0, dz: 0, px: -100, py: 5, pz: 0, int: 15 }, front: { dx: 0, dy: 0, dz: -1, px: 0, py: 5, pz: 100, int: 10 }, back: { dx: 0, dy: 0, dz: 1, px: 0, py: 5, pz: -100, int: 10 } };
+  const s = new _e("DirectionalLight", new M(cfg.top.dx, cfg.top.dy, cfg.top.dz), r);
+  s.position = new M(cfg.top.px, cfg.top.py, cfg.top.pz), s.intensity = cfg.top.int * i;
+  const n = new ct("HemisphericLight", new M(cfg.hemi.dx, cfg.hemi.dy, cfg.hemi.dz), r);
+  n.intensity = cfg.hemi.int * i;
+  const sideLight = new _e("SideLight", new M(cfg.right.dx, cfg.right.dy, cfg.right.dz), r);
+  sideLight.position = new M(cfg.right.px, cfg.right.py, cfg.right.pz), sideLight.intensity = cfg.right.int * i;
+  const sideLight2 = new _e("SideLight2", new M(cfg.left.dx, cfg.left.dy, cfg.left.dz), r);
+  sideLight2.position = new M(cfg.left.px, cfg.left.py, cfg.left.pz), sideLight2.intensity = cfg.left.int * i;
+  const frontLight = new _e("FrontLight", new M(cfg.front.dx, cfg.front.dy, cfg.front.dz), r);
+  frontLight.position = new M(cfg.front.px, cfg.front.py, cfg.front.pz), frontLight.intensity = cfg.front.int * i;
+  const backLight = new _e("BackLight", new M(cfg.back.dx, cfg.back.dy, cfg.back.dz), r);
+  backLight.position = new M(cfg.back.px, cfg.back.py, cfg.back.pz), backLight.intensity = cfg.back.int * i;
+  if (typeof self !== 'undefined') self.__jjDiceLights = { top: s, hemi: n, right: sideLight, left: sideLight2, front: frontLight, back: backLight, M: M, baseIntensity: i };
+  return e && (s.shadowMinZ = 1, s.shadowMaxZ = 70, s.shadowGenerator = new A(2048, s), s.shadowGenerator.useCloseExponentialShadowMap = !0, s.shadowGenerator.darkness = t), { directional: s, hemispheric: n };
 }
 function jt(f) {
   let t = [0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23];

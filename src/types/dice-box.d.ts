@@ -2,6 +2,7 @@ declare module '@3d-dice/dice-box' {
   interface DiceBoxConfig {
     assetPath?: string;
     theme?: string;
+    themeColor?: string;
     scale?: number;
     gravity?: number;
     mass?: number;
@@ -12,7 +13,14 @@ declare module '@3d-dice/dice-box' {
     settleTimeout?: number;
     delay?: number;
     enableShadows?: boolean;
+    shadowTransparency?: number;
     lightIntensity?: number;
+  }
+
+  interface RollOptions {
+    theme?: string;
+    themeColor?: string;
+    newStartPoint?: boolean;
   }
 
   interface DiceResult {
@@ -27,8 +35,10 @@ declare module '@3d-dice/dice-box' {
   class DiceBox {
     constructor(selector: string, config?: DiceBoxConfig);
     init(): Promise<void>;
-    roll(notation: string | object[]): Promise<DiceResult[]>;
+    roll(notation: string | string[] | object[], options?: RollOptions): Promise<DiceResult[]>;
+    add(notation: string | string[] | object[], options?: RollOptions): Promise<DiceResult[]>;
     clear(): void;
+    updateConfig(config: Partial<DiceBoxConfig>): void;
     onRollComplete: ((results: DiceResult[]) => void) | null;
   }
 

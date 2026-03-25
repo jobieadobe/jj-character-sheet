@@ -8,7 +8,7 @@ import { logOutOutline } from 'ionicons/icons';
 import { useNakama } from '../state/NakamaContext';
 import { useGameSession } from '../state/GameSessionContext';
 import { createMatch, joinMatch } from '../services/nakama/match';
-import { useHistory } from 'react-router-dom';
+import { Redirect, useHistory } from 'react-router-dom';
 
 const LobbyPage: React.FC = () => {
   const { state: nakamaState, logout } = useNakama();
@@ -17,6 +17,8 @@ const LobbyPage: React.FC = () => {
   const [joinId, setJoinId] = useState('');
   const [sessionName, setSessionName] = useState('');
   const [error, setError] = useState('');
+
+  if (!nakamaState.session) return <Redirect to="/login" />;
 
   const handleCreate = async () => {
     try {
@@ -71,7 +73,7 @@ const LobbyPage: React.FC = () => {
   return (
     <IonPage>
       <IonHeader>
-        <IonToolbar style={{ '--background': '#1a1a2e' } as any}>
+        <IonToolbar style={{ '--background': 'transparent' } as any}>
           <IonTitle style={{ color: '#e94560' }}>J&J Lobby</IonTitle>
           <IonButtons slot="end">
             <IonButton onClick={logout}>
@@ -80,9 +82,9 @@ const LobbyPage: React.FC = () => {
           </IonButtons>
         </IonToolbar>
       </IonHeader>
-      <IonContent className="ion-padding" style={{ '--background': '#1a1a2e' } as any}>
+      <IonContent className="ion-padding" style={{ '--background': 'transparent' } as any}>
         <div style={{ maxWidth: 500, margin: '0 auto' }}>
-          <IonCard style={{ '--background': '#16213e' } as any}>
+          <IonCard style={{ '--background': '#16213ecc' } as any}>
             <IonCardHeader>
               <IonCardTitle>Create Game Session</IonCardTitle>
             </IonCardHeader>
@@ -99,7 +101,7 @@ const LobbyPage: React.FC = () => {
             </IonCardContent>
           </IonCard>
 
-          <IonCard style={{ '--background': '#16213e' } as any}>
+          <IonCard style={{ '--background': '#16213ecc' } as any}>
             <IonCardHeader>
               <IonCardTitle>Join Game Session</IonCardTitle>
             </IonCardHeader>

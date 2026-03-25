@@ -6,6 +6,8 @@ import { NakamaProvider, useNakama } from './state/NakamaContext';
 import { GameSessionProvider } from './state/GameSessionContext';
 import { CharacterProvider } from './state/CharacterContext';
 import { RollLogProvider } from './state/RollLogContext';
+import { ThemeProvider } from './state/ThemeContext';
+import StarfieldBackground from './components/background/StarfieldBackground';
 
 import LoginPage from './pages/LoginPage';
 import LobbyPage from './pages/LobbyPage';
@@ -38,38 +40,6 @@ setupIonicReact({
   mode: 'md',
 });
 
-// Route guard: redirects to login if not authenticated
-const PrivateRoute: React.FC<{ component: React.FC<any>; path: string; exact?: boolean }> = ({
-  component: Component,
-  ...rest
-}) => {
-  const { state } = useNakama();
-  return (
-    <Route
-      {...rest}
-      render={(props) =>
-        state.session ? <Component {...props} /> : <Redirect to="/login" />
-      }
-    />
-  );
-};
-
-// Route guard: redirects to lobby if already authenticated
-const PublicRoute: React.FC<{ component: React.FC<any>; path: string; exact?: boolean }> = ({
-  component: Component,
-  ...rest
-}) => {
-  const { state } = useNakama();
-  return (
-    <Route
-      {...rest}
-      render={(props) =>
-        !state.session ? <Component {...props} /> : <Redirect to="/lobby" />
-      }
-    />
-  );
-};
-
 const AppRoutes: React.FC = () => {
   const { state } = useNakama();
 
@@ -85,13 +55,16 @@ const AppRoutes: React.FC = () => {
     );
   }
 
+  // Use component prop (not render prop) for all routes — IonRouterOutlet
+  // tracks pages by component identity, and render props create new closures
+  // on every re-render which corrupts Ionic's page stack during navigation.
   return (
     <IonReactRouter>
       <IonRouterOutlet>
-        <PublicRoute path="/login" component={LoginPage} exact />
-        <PrivateRoute path="/lobby" component={LobbyPage} exact />
-        <PrivateRoute path="/game/:matchId" component={GamePage} exact />
-        <PrivateRoute path="/game/:matchId/gm" component={GmPanelPage} exact />
+        <Route path="/login" component={LoginPage} exact />
+        <Route path="/lobby" component={LobbyPage} exact />
+        <Route path="/game/:matchId" component={GamePage} exact />
+        <Route path="/game/:matchId/gm" component={GmPanelPage} exact />
         <Route exact path="/">
           <Redirect to={state.session ? '/lobby' : '/login'} />
         </Route>
@@ -102,15 +75,18 @@ const AppRoutes: React.FC = () => {
 
 const App: React.FC = () => (
   <IonApp>
-    <NakamaProvider>
-      <GameSessionProvider>
-        <CharacterProvider>
-          <RollLogProvider>
-            <AppRoutes />
-          </RollLogProvider>
-        </CharacterProvider>
-      </GameSessionProvider>
-    </NakamaProvider>
+    <ThemeProvider>
+      <StarfieldBackground />
+      <NakamaProvider>
+        <GameSessionProvider>
+          <CharacterProvider>
+            <RollLogProvider>
+              <AppRoutes />
+            </RollLogProvider>
+          </CharacterProvider>
+        </GameSessionProvider>
+      </NakamaProvider>
+    </ThemeProvider>
   </IonApp>
 );
 

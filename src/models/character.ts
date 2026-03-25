@@ -31,6 +31,7 @@ export interface Equipment {
   weapon: EquipmentItem | null;
   armor: EquipmentItem | null;
   shield: EquipmentItem | null;
+  spikedShield: boolean;
 }
 
 export interface Character {
@@ -52,7 +53,7 @@ export interface Character {
   determinationDice: number; // count of d4s available
   xp: number;
   level: number;
-  movementSpeed: string;
+  movementSpeed: DicePool;
   isNpc: boolean;
   createdBy: string;
 }
@@ -82,6 +83,7 @@ export function createDefaultCharacter(userId: string, name: string): Character 
       weapon: null,
       armor: null,
       shield: null,
+      spikedShield: false,
     },
     energy: 20,
     energyMax: 20,
@@ -89,7 +91,7 @@ export function createDefaultCharacter(userId: string, name: string): Character 
     determinationDice: 0,
     xp: 0,
     level: 1,
-    movementSpeed: '30ft',
+    movementSpeed: [{ sides: 6 }],
     isNpc: false,
     createdBy: userId,
   };

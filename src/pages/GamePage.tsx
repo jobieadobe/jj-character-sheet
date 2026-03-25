@@ -1,23 +1,23 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
-  IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons,
-  IonButton, IonIcon, IonSegment, IonSegmentButton, IonLabel,
-  IonBadge,
+  IonPage, IonHeader, IonToolbar, IonContent, IonIcon,
+  IonSegment, IonSegmentButton, IonLabel,
+  IonBadge, IonSelect, IonSelectOption,
 } from '@ionic/react';
 import { settingsOutline, personOutline, listOutline } from 'ionicons/icons';
-import { useParams } from 'react-router-dom';
+import { Redirect, useHistory, useParams } from 'react-router-dom';
 import { useNakama } from '../state/NakamaContext';
 import { useGameSession } from '../state/GameSessionContext';
+import { useTheme } from '../state/ThemeContext';
 import { useCharacter } from '../state/CharacterContext';
 import { useRollLog } from '../state/RollLogContext';
+import { Character } from '../models/character';
 import { RollComponent } from '../models/dice';
 import { RollLogEntry } from '../models/log';
-import { StatName, createDefaultCharacter } from '../models/character';
 import { isGmRole } from '../models/session';
 import { sendMatchMessage } from '../services/nakama/match';
 import { OpCode } from '../services/nakama/opcodes';
-import { rollDiceFallback } from '../services/dice/dice-engine';
-import { formatRollResult } from '../utils/format-roll';
+import { createTestCharacters } from '../data/test-characters';
 import DiceCanvas from '../components/dice/DiceCanvas';
 import RollLog from '../components/log/RollLog';
 import CharacterSheetPage from './CharacterSheetPage';
@@ -28,46 +28,45 @@ const GamePage: React.FC = () => {
   const { state: sessionState } = useGameSession();
   const { state: charState, dispatch: charDispatch } = useCharacter();
   const { state: logState, addEntry } = useRollLog();
+  const { theme } = useTheme();
 
   const [activeTab, setActiveTab] = useState<'sheet' | 'log'>('sheet');
   const [diceVisible, setDiceVisible] = useState(false);
+  const history = useHistory();
 
-  const isGm = isGmRole(sessionState.myRole);
   const session = nakamaState.session;
-  const username = session?.username || 'Unknown';
 
-  // Create a default character if none exists
+  const isGm = isGmRole(sessionState.myRole)
+    || sessionState.session?.createdBy === session?.user_id
+    || (sessionState.session?.members || []).some((m) => m.userId === session?.user_id && isGmRole(m.role));
+
+  // Load test characters if none exist
+  const initialized = useRef(false);
   useEffect(() => {
-    if (!charState.myCharacter && session) {
-      const defaultChar = createDefaultCharacter(session.user_id!, `${username}'s Character`);
-      defaultChar.equipment.weapon = { name: 'Vibrosword', dice: [{ sides: 10 }] };
-      defaultChar.equipment.armor = { name: 'Power Suit', dice: [{ sides: 8 }] };
-      defaultChar.stats.STR = [{ sides: 8 }, { sides: 6 }];
-      defaultChar.stats.DEX = [{ sides: 6 }];
-      defaultChar.stats.CON = [{ sides: 10 }];
-      defaultChar.stats.INT = [{ sides: 6 }];
-      defaultChar.stats.WIS = [{ sides: 8 }];
-      defaultChar.stats.CHA = [{ sides: 6 }, { sides: 4 }];
-      defaultChar.energyMax = 30;
-      defaultChar.energy = 30;
-      defaultChar.forceDice = 2;
-      defaultChar.determinationDice = 1;
-      defaultChar.className = 'Stalwart';
-      defaultChar.race = 'Whiphid';
-      defaultChar.flaw = 'Indecision';
-      defaultChar.speciesAbilities = 'Healing coma when incapacitated';
-      defaultChar.strengths = ['Survival', 'Nature', 'Mechanics'];
-      defaultChar.description = 'As a Stalwart, this character\'s focus on Constitution grants them unparalleled vitality.';
-      defaultChar.passives = [
-        'VIBROSHIELD (PASSIVE): When an enemy makes a melee attack against you they take damage equal to your SHIELD dice roll.',
-        'BULWARK OF PROTECTION (PASSIVE): When an ally within CLOSE range is targeted by an attack, you can use your shield to intercept.',
-        'TAUNT (BONUS): Choose one enemy, it must spend its next turn trying to attack you.',
-      ];
-      charDispatch({ type: 'SET_MY_CHARACTER', character: defaultChar });
+    if (!initialized.current && charState.allCharacters.length === 0 && session) {
+      initialized.current = true;
+      const testChars = createTestCharacters(session.user_id!);
+      testChars.forEach((c) => {
+        charDispatch({ type: 'ADD_CHARACTER', character: c });
+      });
+      charDispatch({ type: 'SET_MY_CHARACTER', character: testChars[0] });
     }
-  }, [charState.myCharacter, session, username, charDispatch]);
+  }, [charState.allCharacters.length, session, charDispatch]);
 
+  // Auth guard — after all hooks, redirect if session lost
+  if (!session) return <Redirect to="/login" />;
+
+  const username = session.username || 'Unknown';
   const character = charState.myCharacter;
+
+  const allAvailable = [...charState.allCharacters, ...charState.npcs];
+
+  const handleCharacterSwitch = (charId: string) => {
+    const found = allAvailable.find((c) => c.id === charId);
+    if (found) {
+      charDispatch({ type: 'SET_MY_CHARACTER', character: found });
+    }
+  };
 
   const handleRollComplete = useCallback(
     (components: RollComponent[], total: number, formatted: string) => {
@@ -99,21 +98,31 @@ const GamePage: React.FC = () => {
     [session, username, character, matchId, addEntry]
   );
 
-  const handleStatClick = useCallback(
-    (stat: StatName) => {
+  const handleSpikedShieldToggle = useCallback(
+    (checked: boolean) => {
       if (!character) return;
-      const dice = character.stats[stat];
-      if (dice.length === 0) return;
-
-      const results = rollDiceFallback(dice);
-      const subtotal = results.reduce((sum, d) => sum + d.value, 0);
-      const components: RollComponent[] = [
-        { source: { type: 'stat', name: stat }, dice: results, subtotal },
-      ];
-      const formatted = formatRollResult(username, character.name, components, subtotal);
-      handleRollComplete(components, subtotal, formatted);
+      const updated = {
+        ...character,
+        equipment: { ...character.equipment, spikedShield: checked },
+      };
+      charDispatch({ type: 'UPDATE_CHARACTER', character: updated });
     },
-    [character, username, handleRollComplete]
+    [character, charDispatch]
+  );
+
+  const handleCharacterUpdate = useCallback(
+    (updated: Character) => {
+      charDispatch({ type: 'UPDATE_CHARACTER', character: updated });
+      if (matchId) {
+        try {
+          sendMatchMessage(matchId, OpCode.ENERGY_CHANGED, {
+            characterId: updated.id,
+            energy: updated.energy,
+          });
+        } catch {}
+      }
+    },
+    [charDispatch, matchId]
   );
 
   const handleEnergyAdjust = useCallback(
@@ -134,32 +143,59 @@ const GamePage: React.FC = () => {
     [character, charDispatch, matchId]
   );
 
-  if (!character) {
-    return (
-      <IonPage>
-        <IonContent className="ion-padding">
-          <p>Loading character...</p>
-        </IonContent>
-      </IonPage>
-    );
-  }
-
   return (
     <IonPage>
       <IonHeader>
-        <IonToolbar style={{ '--background': '#1a1a2e' } as any}>
-          <IonTitle style={{ color: '#e94560', fontSize: '1rem' }}>
-            {sessionState.session?.name || 'Game'} — Ep. {sessionState.session?.episodeNumber || 1}
-          </IonTitle>
-          <IonButtons slot="end">
-            {isGm && (
-              <IonButton routerLink={`/game/${matchId}/gm`}>
-                <IonIcon icon={settingsOutline} />
-              </IonButton>
-            )}
-          </IonButtons>
+        <IonToolbar style={{ '--background': theme.background } as any}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 12px' }}>
+            <span style={{ color: theme.primary, fontSize: '1rem', fontWeight: 600 }}>
+              {sessionState.session?.name || 'Game'} — Ep. {sessionState.session?.episodeNumber || 1}
+            </span>
+            <IonIcon
+              icon={settingsOutline}
+              onClick={() => history.push(`/game/${matchId}/gm`)}
+              style={{
+                fontSize: '1.4rem',
+                color: theme.textMuted,
+                cursor: 'pointer',
+                padding: 6,
+              }}
+            />
+          </div>
         </IonToolbar>
-        <IonToolbar style={{ '--background': '#16213e' } as any}>
+
+        {/* Character switcher */}
+        {character && allAvailable.length > 1 && (
+          <IonToolbar style={{ '--background': theme.surfaceDeep, '--min-height': '40px' } as any}>
+            <div style={{ display: 'flex', alignItems: 'center', padding: '0 12px', gap: 8 }}>
+              <span style={{ fontSize: '0.75rem', color: theme.textMuted, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                Active:
+              </span>
+              <IonSelect
+                value={character.id}
+                onIonChange={(e) => handleCharacterSwitch(e.detail.value)}
+                interface="popover"
+                style={{ '--color': theme.primary, '--placeholder-color': theme.textMuted, fontSize: '0.9rem', maxWidth: '100%' } as any}
+              >
+                {charState.allCharacters.filter((c) => !c.isNpc).map((c) => (
+                  <IonSelectOption key={c.id} value={c.id}>
+                    {c.name} ({c.race} {c.className})
+                  </IonSelectOption>
+                ))}
+                {charState.npcs.length > 0 && charState.allCharacters.filter((c) => !c.isNpc).length > 0 && (
+                  <IonSelectOption disabled value="">— NPCs —</IonSelectOption>
+                )}
+                {charState.npcs.map((c) => (
+                  <IonSelectOption key={c.id} value={c.id}>
+                    [NPC] {c.name} {c.race || c.className ? `(${[c.race, c.className].filter(Boolean).join(' ')})` : ''}
+                  </IonSelectOption>
+                ))}
+              </IonSelect>
+            </div>
+          </IonToolbar>
+        )}
+
+        <IonToolbar style={{ '--background': theme.surface } as any}>
           <IonSegment value={activeTab} onIonChange={(e) => setActiveTab(e.detail.value as any)}>
             <IonSegmentButton value="sheet">
               <IonIcon icon={personOutline} />
@@ -178,22 +214,30 @@ const GamePage: React.FC = () => {
         </IonToolbar>
       </IonHeader>
 
-      <IonContent style={{ '--background': '#1a1a2e' } as any}>
-        {activeTab === 'sheet' && (
-          <CharacterSheetPage
-            character={character}
-            isGm={isGm}
-            onStatClick={handleStatClick}
-            onEnergyAdjust={handleEnergyAdjust}
-            onRollComplete={handleRollComplete}
-            onRollStart={() => setDiceVisible(true)}
-            username={username}
-            logEntries={logState.entries}
-          />
-        )}
-
-        {activeTab === 'log' && (
-          <RollLog entries={logState.entries} />
+      <IonContent style={{ '--background': 'transparent' } as any}>
+        {!character ? (
+          <div className="ion-padding" style={{ textAlign: 'center', color: theme.textMuted }}>
+            <p>Loading character...</p>
+          </div>
+        ) : (
+          <>
+            {activeTab === 'sheet' && (
+              <CharacterSheetPage
+                character={character}
+                isGm={isGm}
+                onEnergyAdjust={handleEnergyAdjust}
+                onRollComplete={handleRollComplete}
+                onRollStart={() => setDiceVisible(true)}
+                onSpikedShieldToggle={handleSpikedShieldToggle}
+                onCharacterUpdate={handleCharacterUpdate}
+                username={username}
+                logEntries={logState.entries}
+              />
+            )}
+            {activeTab === 'log' && (
+              <RollLog entries={logState.entries} />
+            )}
+          </>
         )}
       </IonContent>
 

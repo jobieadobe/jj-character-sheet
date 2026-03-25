@@ -16,7 +16,7 @@ export interface RollResult {
   total: number;
 }
 
-export type RollSourceType = 'stat' | 'd20' | 'force' | 'determination' | 'weapon' | 'armor' | 'shield';
+export type RollSourceType = 'stat' | 'd20' | 'force' | 'determination' | 'weapon' | 'armor' | 'shield' | 'movement';
 
 export type RollSource =
   | { type: 'stat'; name: string }
@@ -25,7 +25,8 @@ export type RollSource =
   | { type: 'determination' }
   | { type: 'weapon' }
   | { type: 'armor' }
-  | { type: 'shield' };
+  | { type: 'shield' }
+  | { type: 'movement' };
 
 export interface QueuedGroup {
   source: RollSource;

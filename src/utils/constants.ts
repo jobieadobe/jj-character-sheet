@@ -13,4 +13,4 @@ export const STAT_COLORS: Record<StatName, string> = {
 
 export const FORCE_COLOR = '#00bcd4';
 export const DETERMINATION_COLOR = '#ff9800';
-export const D20_COLOR = '#ffffff';
+export const D20_COLOR = '#e94560';

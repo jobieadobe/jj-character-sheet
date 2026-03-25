@@ -4,10 +4,12 @@ import {
   IonCardHeader, IonCardTitle, IonSegment, IonSegmentButton, IonLabel,
   IonText, IonSpinner,
 } from '@ionic/react';
+import { Redirect } from 'react-router-dom';
 import { useNakama } from '../state/NakamaContext';
 
 const LoginPage: React.FC = () => {
   const { state, login, register } = useNakama();
+  if (state.session) return <Redirect to="/lobby" />;
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -34,12 +36,12 @@ const LoginPage: React.FC = () => {
 
   return (
     <IonPage>
-      <IonContent className="ion-padding" style={{ '--background': '#1a1a2e' } as any}>
+      <IonContent className="ion-padding" style={{ '--background': 'transparent' } as any}>
         <div style={{ maxWidth: 400, margin: '60px auto' }}>
           <h1 style={{ textAlign: 'center', color: '#e94560', fontFamily: 'serif', fontSize: '2rem' }}>
             J&J Character Sheet
           </h1>
-          <IonCard style={{ '--background': '#16213e' } as any}>
+          <IonCard style={{ '--background': '#16213ecc' } as any}>
             <IonCardHeader>
               <IonSegment value={mode} onIonChange={(e) => setMode(e.detail.value as any)}>
                 <IonSegmentButton value="login"><IonLabel>Login</IonLabel></IonSegmentButton>

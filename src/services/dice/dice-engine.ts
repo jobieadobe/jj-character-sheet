@@ -13,7 +13,8 @@ export async function initDiceEngine(selector = '#dice-canvas'): Promise<void> {
     try {
       diceBox = new DiceBox(selector, {
         assetPath: '/assets/dice-box/',
-        theme: 'default',
+        theme: 'galaxy',
+        themeColor: '#1a1a4e',
         scale: 15,
         gravity: 1,
         mass: 1,
@@ -22,6 +23,9 @@ export async function initDiceEngine(selector = '#dice-canvas'): Promise<void> {
         linearDamping: 0.5,
         angularDamping: 0.4,
         settleTimeout: 5000,
+        enableShadows: true,
+        shadowTransparency: 0.8,
+        lightIntensity: 2.0,
       });
       await diceBox.init();
       isReady = true;
@@ -42,7 +46,7 @@ function fixDieValue(value: number, sides: number): number {
   return value;
 }
 
-export async function rollDice(dice: Die[]): Promise<DieResult[]> {
+export async function rollDice(dice: Die[], themeColor?: string): Promise<DieResult[]> {
   if (!diceBox || !isReady) {
     throw new Error('Dice engine not initialized');
   }
@@ -51,8 +55,8 @@ export async function rollDice(dice: Die[]): Promise<DieResult[]> {
   const notation = dice.map((d) => `1d${d.sides}`);
 
   try {
-    // roll() returns a promise with results
-    const results = await diceBox.roll(notation);
+    const options = themeColor ? { themeColor } : undefined;
+    const results = await diceBox.roll(notation, options);
 
     const mapped: DieResult[] = results.map((r: any) => ({
       sides: r.sides,
@@ -62,6 +66,16 @@ export async function rollDice(dice: Die[]): Promise<DieResult[]> {
   } catch (err) {
     console.error('3D roll failed, using fallback:', err);
     return rollDiceFallback(dice);
+  }
+}
+
+export function updateDiceColor(themeColor: string): void {
+  if (diceBox && isReady) {
+    try {
+      diceBox.updateConfig({ themeColor });
+    } catch {
+      // updateConfig may not be available in all versions
+    }
   }
 }
 

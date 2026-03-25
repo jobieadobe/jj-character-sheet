@@ -14,6 +14,7 @@ type CharacterAction =
   | { type: 'SET_ALL_CHARACTERS'; characters: Character[] }
   | { type: 'SET_NPCS'; npcs: Character[] }
   | { type: 'UPDATE_CHARACTER'; character: Character }
+  | { type: 'ADD_CHARACTER'; character: Character }
   | { type: 'SET_LOADING'; loading: boolean };
 
 const initialState: CharacterState = {
@@ -31,6 +32,15 @@ function reducer(state: CharacterState, action: CharacterAction): CharacterState
       return { ...state, allCharacters: action.characters };
     case 'SET_NPCS':
       return { ...state, npcs: action.npcs };
+    case 'ADD_CHARACTER': {
+      const exists = state.allCharacters.some((c) => c.id === action.character.id);
+      if (exists) return state;
+      const chars = [...state.allCharacters, action.character];
+      if (action.character.isNpc) {
+        return { ...state, npcs: [...state.npcs, action.character] };
+      }
+      return { ...state, allCharacters: chars };
+    }
     case 'UPDATE_CHARACTER': {
       const updated = action.character;
       const allChars = state.allCharacters.map((c) =>

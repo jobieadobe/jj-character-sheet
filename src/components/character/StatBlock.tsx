@@ -23,14 +23,14 @@ const StatBlock: React.FC<StatBlockProps> = ({ name, dice, onClick }) => {
         justifyContent: 'space-between',
         padding: '10px 14px',
         margin: '4px 0',
-        background: '#16213e',
+        background: '#16213ecc',
         borderLeft: `4px solid ${color}`,
         borderRadius: 6,
         cursor: 'pointer',
         transition: 'background 0.2s',
       }}
-      onMouseEnter={(e) => (e.currentTarget.style.background = '#1a2744')}
-      onMouseLeave={(e) => (e.currentTarget.style.background = '#16213e')}
+      onMouseEnter={(e) => (e.currentTarget.style.background = '#1a2744dd')}
+      onMouseLeave={(e) => (e.currentTarget.style.background = '#16213ecc')}
     >
       <div>
         <div style={{ fontWeight: 'bold', fontSize: '1.3rem', color }}>
